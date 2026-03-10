@@ -1,0 +1,167 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--bg-secondary);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.count {
+  width: 20px;
+  height: 20px;
+  background: var(--accent-subtle);
+  border: 1px solid rgba(139,92,246,0.3);
+  border-radius: 50%;
+  font-size: 0.7rem;
+  color: var(--accent-bright);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+}
+
+.list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.5rem;
+}
+
+.userItem {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: var(--radius-md);
+  transition: background var(--transition);
+  animation: slideInRight 0.2s ease;
+}
+
+.userItem:hover {
+  background: var(--bg-elevated);
+}
+
+.userItem.self {
+  background: var(--accent-subtle);
+}
+
+.avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: white;
+  flex-shrink: 0;
+}
+
+.info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.name {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.youTag {
+  color: var(--accent-bright);
+  font-size: 0.7rem;
+  font-weight: 400;
+}
+
+.joinTime {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+}
+
+.activeDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  animation: pulse 2.5s infinite;
+}
+
+/* ── Empty ───────────────────────────────────────────────────────────────── */
+.empty {
+  padding: 2rem 1rem;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.empty p {
+  font-size: 0.8rem;
+  margin-bottom: 0.25rem;
+}
+
+.emptyHint {
+  font-size: 0.72rem !important;
+  opacity: 0.6;
+}
+
+/* ── Footer ──────────────────────────────────────────────────────────────── */
+.footer {
+  padding: 0.75rem;
+  border-top: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+
+.shareSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.shareLabel {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.shareBtn {
+  padding: 0.5rem;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all var(--transition);
+  width: 100%;
+}
+
+.shareBtn:hover {
+  color: var(--accent-bright);
+  border-color: rgba(139,92,246,0.4);
+  background: var(--accent-subtle);
+}
