@@ -6,7 +6,6 @@ import Toolbar from "@/components/Toolbar";
 import UserList from "@/components/UserList";
 import StatusBar from "@/components/StatusBar";
 import { useSocket } from "@/hooks/useSocket";
-import { useDebounce } from "@/hooks/useDebounce";
 import { getStoredUsername } from "@/utils/username";
 import type { User, SaveStatus } from "@/types/editorTypes";
 import styles from "./EditorPage.module.css";
@@ -41,7 +40,6 @@ export default function EditorPage() {
     setTimeout(() => setNotification(null), 3000);
   };
 
-  // ── Socket Events ──────────────────────────────────────────────────────────
   const { emitChange, emitTitleChange, emitSave } = useSocket({
     docId,
     username,
@@ -73,7 +71,6 @@ export default function EditorPage() {
     onError: (msg) => showNotification(msg),
   });
 
-  // ── Content Change ─────────────────────────────────────────────────────────
   const handleContentChange = useCallback(
     (newContent: string) => {
       if (isRemoteUpdate.current) {
@@ -87,7 +84,6 @@ export default function EditorPage() {
     [emitChange]
   );
 
-  // ── Title Change ───────────────────────────────────────────────────────────
   const handleTitleChange = useCallback(
     (newTitle: string) => {
       setTitle(newTitle);
@@ -96,7 +92,6 @@ export default function EditorPage() {
     [emitTitleChange]
   );
 
-  // ── Autosave ───────────────────────────────────────────────────────────────
   const performSave = useCallback(() => {
     if (!content) return;
     emitSave(content, title);
@@ -110,7 +105,6 @@ export default function EditorPage() {
     };
   }, [performSave]);
 
-  // ── Keyboard Shortcuts ─────────────────────────────────────────────────────
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === "s") {
@@ -122,49 +116,58 @@ export default function EditorPage() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [performSave]);
 
-  // ── Share Link ─────────────────────────────────────────────────────────────
   const handleShare = useCallback(() => {
     navigator.clipboard.writeText(window.location.href);
     showNotification("Link copied to clipboard!");
   }, []);
 
-  // ── Toolbar Insert ─────────────────────────────────────────────────────────
-  const handleToolbarInsert = useCallback((prefix: string, suffix = "") => {
-    const textarea = document.querySelector<HTMLTextAreaElement>(".editor-textarea");
-    if (!textarea) return;
+  const handleToolbarInsert = useCallback(
+    (prefix: string, suffix = "") => {
+      const textarea = document.querySelector<HTMLTextAreaElement>(
+        ".editor-textarea"
+      );
+      if (!textarea) return;
 
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const selected = content.slice(start, end);
-    const newContent =
-      content.slice(0, start) + prefix + selected + suffix + content.slice(end);
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const selected = content.slice(start, end);
 
-    setContent(newContent);
-    emitChange(newContent);
+      const newContent =
+        content.slice(0, start) +
+        prefix +
+        selected +
+        suffix +
+        content.slice(end);
 
-    // Restore cursor position after state update
-    requestAnimationFrame(() => {
-      const newPos = start + prefix.length + selected.length + suffix.length;
-      textarea.setSelectionRange(newPos, newPos);
-      textarea.focus();
-    });
-  }, [content, emitChange]);
+      setContent(newContent);
+      emitChange(newContent);
+
+      requestAnimationFrame(() => {
+        const newPos =
+          start + prefix.length + selected.length + suffix.length;
+        textarea.setSelectionRange(newPos, newPos);
+        textarea.focus();
+      });
+    },
+    [content, emitChange]
+  );
+
+  
 
   return (
     <div className={styles.layout}>
-      {/* Notification */}
       {notification && (
         <div className={styles.notification}>
           <span>{notification}</span>
         </div>
       )}
 
-      {/* ── Header ────────────────────────────────────────────────────────── */}
       <header className={styles.header}>
         <div className={styles.headerLeft}>
           <button onClick={() => navigate("/")} className={styles.logoBtn}>
             <span className={styles.logoIcon}>◈</span>
           </button>
+
           <div className={styles.titleWrapper}>
             {isEditingTitle ? (
               <input
@@ -173,91 +176,48 @@ export default function EditorPage() {
                 value={title}
                 onChange={(e) => handleTitleChange(e.target.value)}
                 onBlur={() => setIsEditingTitle(false)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === "Escape") {
-                    setIsEditingTitle(false);
-                  }
-                }}
                 className={styles.titleInput}
               />
             ) : (
               <button
                 className={styles.titleButton}
                 onClick={() => setIsEditingTitle(true)}
-                title="Click to rename"
               >
                 <span className={styles.titleText}>{title}</span>
-                <span className={styles.editIcon}>✏️</span>
               </button>
             )}
           </div>
         </div>
 
         <div className={styles.headerRight}>
-          {/* Connection */}
-          <div className={`${styles.connectionBadge} ${isConnected ? styles.connected : styles.disconnected}`}>
-            <span className={styles.connectionDot} />
-            <span>{isConnecting ? "Connecting..." : isConnected ? "Live" : "Offline"}</span>
-          </div>
-
-          {/* View toggle */}
-          <div className={styles.viewToggle}>
-            <button
-              onClick={() => setShowPreview(!showPreview)}
-              className={`${styles.toggleBtn} ${showPreview ? styles.active : ""}`}
-              title="Toggle Preview"
-            >
-              Preview
-            </button>
-          </div>
-
-          {/* Users */}
-          <button
-            onClick={() => setShowUsers(!showUsers)}
-            className={styles.usersBtn}
-            title="Toggle Users Panel"
-          >
-            <span className={styles.usersBtnDot} />
-            {users.length} online
-          </button>
-
-          {/* Share */}
           <button onClick={handleShare} className={styles.shareBtn}>
-            Share ↗
+            Share
           </button>
 
-          {/* Save */}
-          <button onClick={performSave} className={styles.saveBtn} disabled={saveStatus === "saving"}>
-            {saveStatus === "saving" ? (
-              <><span className={styles.spinner} /> Saving</>
-            ) : saveStatus === "saved" ? (
-              <><span className={styles.savedDot} /> Saved</>
-            ) : (
-              "Save"
-            )}
+          <button
+            onClick={performSave}
+            className={styles.saveBtn}
+            disabled={saveStatus === "saving"}
+          >
+            {saveStatus === "saving" ? "Saving..." : "Save"}
           </button>
         </div>
       </header>
 
-      {/* ── Toolbar ───────────────────────────────────────────────────────── */}
       <Toolbar onInsert={handleToolbarInsert} />
 
-      {/* ── Editor Body ───────────────────────────────────────────────────── */}
       <div className={styles.body}>
-        <div className={`${styles.editorPane} ${!showPreview ? styles.fullWidth : ""}`}>
-          {isConnecting ? (
-            <div className={styles.loadingState}>
-              <div className={styles.loadingSpinner} />
-              <p>Loading document...</p>
-            </div>
-          ) : (
-            <Editor
-              content={content}
-              onChange={handleContentChange}
-              placeholder="Start typing your markdown..."
-              docId={docId}
-            />
-          )}
+        <div
+          className={`${styles.editorPane} ${
+            !showPreview ? styles.fullWidth : ""
+          }`}
+        >
+          <Editor
+            content={content}
+            onChange={handleContentChange}
+            placeholder="Start typing your markdown..."
+            docId={docId}
+          />
         </div>
 
         {showPreview && (
@@ -266,14 +226,13 @@ export default function EditorPage() {
           </div>
         )}
 
-        {showUsers && (
-          <aside className={styles.sidebar}>
-            <UserList users={users} currentUsername={username} />
-          </aside>
-        )}
+        <aside className={styles.sidebar}>
+          <UserList users={users} currentUsername={username} />
+
+          
+        </aside>
       </div>
 
-      {/* ── Status Bar ────────────────────────────────────────────────────── */}
       <StatusBar
         docId={docId}
         lastSaved={lastSaved}

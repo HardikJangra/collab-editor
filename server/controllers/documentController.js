@@ -1,6 +1,7 @@
 const Document = require("../models/Document");
 const { v4: uuidv4 } = require("uuid");
 
+
 // POST /api/documents — Create new document
 const createDocument = async (req, res, next) => {
   try {
