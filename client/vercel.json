@@ -4,9 +4,5 @@
   "devCommand": "npm run dev",
   "installCommand": "npm install",
   "framework": "vite",
-  "rewrites": [{ "source": "/(.*)", "destination": "/" }],
-  "env": {
-    "VITE_API_URL": "@api_url",
-    "VITE_SOCKET_URL": "@socket_url"
-  }
+  "rewrites": [{ "source": "/(.*)", "destination": "/" }]
 }
