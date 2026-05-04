@@ -27,7 +27,7 @@ export default function HomePage() {
     }
   };
 
-  const handleOpenDoc = () => {
+const handleOpenDoc = () => {
     const trimmed = docInput.trim();
     if (!trimmed) {
       setInputError("Please enter a document ID or URL");
