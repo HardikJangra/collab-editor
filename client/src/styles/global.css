@@ -7,19 +7,19 @@
 
 :root {
   /* Palette */
-  --bg-primary: #0a0a0f;
-  --bg-secondary: #0f0f17;
-  --bg-surface: #13131e;
-  --bg-elevated: #1a1a28;
-  --bg-hover: #1f1f30;
+  --bg-primary: #ffffff;
+  --bg-secondary: #ffffff;
+  --bg-surface: #ffffff;
+  --bg-elevated: #f9fafb;
+  --bg-hover: #f3f4f6;
 
-  --border: #1e1e2e;
-  --border-subtle: #161624;
-  --border-accent: #2a2a40;
+  --border: #e5e7eb;
+  --border-subtle: #f3f4f6;
+  --border-accent: #d1d5db;
 
-  --text-primary: #e8e8f0;
-  --text-secondary: #8888a8;
-  --text-muted: #555570;
+  --text-primary: #111827;
+  --text-secondary: #4b5563;
+  --text-muted: #6b7280;
   --text-accent: #a78bfa;
 
   --accent: #7c3aed;
@@ -62,7 +62,9 @@ html {
 body {
   background-color: var(--bg-primary);
   color: var(--text-primary);
-  font-family: var(--font-body);
+  body {
+    font-family: 'Inter', sans-serif;
+  }
   font-size: 0.9rem;
   line-height: 1.6;
   min-height: 100vh;
@@ -159,6 +161,6 @@ a {
 
 /* ── Highlight.js overrides ──────────────────────────────────────────────── */
 .hljs {
-  background: #0d0d14 !important;
+  background: #f9fafb !important;
   border-radius: var(--radius-md) !important;
 }

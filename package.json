@@ -10,6 +10,9 @@
     "install:all": "npm install && cd client && npm install && cd ../server && npm install"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "autoprefixer": "^10.5.0",
+    "concurrently": "^8.2.2",
+    "postcss": "^8.5.14",
+    "tailwindcss": "^4.2.4"
   }
 }

@@ -27,9 +27,12 @@
     "@typescript-eslint/eslint-plugin": "^6.13.2",
     "@typescript-eslint/parser": "^6.13.2",
     "@vitejs/plugin-react": "^4.2.1",
+    "autoprefixer": "^10.5.0",
     "eslint": "^8.55.0",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.5",
+    "postcss": "^8.5.14",
+    "tailwindcss": "^4.2.4",
     "typescript": "^5.9.3",
     "vite": "^5.0.7"
   }

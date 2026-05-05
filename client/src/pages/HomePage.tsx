@@ -79,10 +79,9 @@ const handleOpenDoc = () => {
   ];
 
   return (
-    <div className={`${styles.page} ${mounted ? styles.mounted : ""}`}>
+    <div className="min-h-screen bg-white text-gray-900">
       {/* Background Grid */}
-      <div className={styles.grid} aria-hidden="true" />
-      <div className={styles.glow} aria-hidden="true" />
+      
 
       {/* Header */}
       <header className={styles.header}>
