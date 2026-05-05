@@ -1,8 +1,21 @@
 import { io, Socket } from "socket.io-client";
 
+const getSocketUrl = () => {
+  if (import.meta.env.VITE_SOCKET_URL) {
+    return import.meta.env.VITE_SOCKET_URL;
+  }
+
+  if (import.meta.env.VITE_API_URL) {
+    const apiUrl = new URL(import.meta.env.VITE_API_URL, window.location.origin);
+    apiUrl.pathname = apiUrl.pathname.replace(/\/api\/?$/, "");
+    return apiUrl.origin;
+  }
+
+  return import.meta.env.PROD ? window.location.origin : "http://localhost:3001";
+};
+
 const SOCKET_URL =
-  import.meta.env.VITE_SOCKET_URL ||
-  (import.meta.env.PROD ? window.location.origin : "http://localhost:3001");
+  getSocketUrl();
 
 let socket: Socket | null = null;
 

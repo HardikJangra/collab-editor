@@ -11,11 +11,24 @@ const { apiLimiter } = require("./middleware/rateLimiter");
 const app = express();
 const server = http.createServer(app);
 
+const allowedOrigins = (process.env.CLIENT_URL || "http://localhost:5173")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+const corsOrigin = (origin, callback) => {
+  if (!origin || allowedOrigins.includes(origin)) {
+    return callback(null, true);
+  }
+
+  return callback(new Error(`Origin ${origin} is not allowed by CORS`));
+};
+
 // ─── Socket.io Setup ────────────────────────────────────────────────────────
 const io = new Server(server, {
   cors: {
-    origin: process.env.CLIENT_URL || "http://localhost:5173",
-    methods: ["GET", "POST", "PUT"],
+    origin: corsOrigin,
+    methods: ["GET", "POST", "PUT", "OPTIONS"],
     credentials: true,
   },
   pingTimeout: 60000,
@@ -25,7 +38,7 @@ const io = new Server(server, {
 // ─── Middleware ──────────────────────────────────────────────────────────────
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || "http://localhost:5173",
+    origin: corsOrigin,
     credentials: true,
   })
 );

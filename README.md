@@ -103,10 +103,23 @@ cd client && npm run build
 # Deploy dist/ to Vercel
 ```
 
+Set these Vercel environment variables:
+```bash
+VITE_API_URL=https://your-render-service.onrender.com/api
+# Optional. If omitted, the client derives this from VITE_API_URL.
+VITE_SOCKET_URL=https://your-render-service.onrender.com
+```
+
 **Backend (Railway/Render)**
 ```bash
 # Set environment variables:
 # MONGODB_URI, CLIENT_URL, NODE_ENV=production, PORT
+#
+# CLIENT_URL should be your Vercel frontend origin, for example:
+# CLIENT_URL=https://your-app.vercel.app
+#
+# You can allow multiple frontend origins with commas:
+# CLIENT_URL=https://your-app.vercel.app,https://your-preview.vercel.app
 ```
 
 ## Resume Description
