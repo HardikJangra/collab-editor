@@ -27,9 +27,8 @@ const corsOrigin = (origin, callback) => {
 // ─── Socket.io Setup ────────────────────────────────────────────────────────
 const io = new Server(server, {
   cors: {
-    origin: corsOrigin,
+    origin: "*",
     methods: ["GET", "POST", "PUT", "OPTIONS"],
-    credentials: true,
   },
   pingTimeout: 60000,
   pingInterval: 25000,

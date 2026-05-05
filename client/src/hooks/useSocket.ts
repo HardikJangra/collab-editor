@@ -1,6 +1,6 @@
 import { useEffect, useRef, useCallback } from "react";
 import { Socket } from "socket.io-client";
-import { connectSocket, disconnectSocket } from "@/services/socket";
+import getSocket, { disconnectSocket } from "@/services/socket";
 import type { User, CursorUpdate } from "@/types/editorTypes";
 
 interface UseSocketOptions {
@@ -36,7 +36,7 @@ export const useSocket = ({
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
-    const socket = connectSocket();
+    const socket = getSocket();
     socketRef.current = socket;
 
     socket.on("connect", () => {
@@ -52,6 +52,13 @@ export const useSocket = ({
     socket.on("users-update", onUsersUpdate);
     socket.on("document-saved", onDocumentSaved);
     socket.on("error", (data: { message: string }) => onError(data.message));
+
+    if (!socket.connected) {
+      socket.connect();
+    } else {
+      onConnected();
+      socket.emit("join-document", { docId, username });
+    }
 
     return () => {
       socket.off("connect");
