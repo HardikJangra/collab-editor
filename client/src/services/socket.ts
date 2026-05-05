@@ -14,19 +14,17 @@ const getSocketUrl = () => {
   return import.meta.env.PROD ? window.location.origin : "http://localhost:3001";
 };
 
-const SOCKET_URL =
-  getSocketUrl();
+const SOCKET_URL = getSocketUrl();
 
 let socket: Socket | null = null;
 
 export const getSocket = (): Socket => {
   if (!socket) {
     socket = io(SOCKET_URL, {
-      transports: ["websocket", "polling"],
+      transports: ["websocket"], // 🔥 FIXED
       reconnection: true,
-      reconnectionAttempts: 5,
+      reconnectionAttempts: 10,
       reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
       timeout: 20000,
       autoConnect: false,
     });
