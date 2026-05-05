@@ -27,7 +27,6 @@ export default function EditorPage() {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
 
   const username = useRef(getStoredUsername()).current;
-  const isRemoteUpdate = useRef(false);
   const autosaveTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   if (!docId) {
@@ -50,7 +49,6 @@ export default function EditorPage() {
       if (lastSavedAt) setLastSaved(new Date(lastSavedAt));
     },
     onEditorUpdate: ({ content: c }) => {
-      isRemoteUpdate.current = true;
       setContent(c);
     },
     onTitleUpdate: ({ title: t }) => setTitle(t),
@@ -73,10 +71,6 @@ export default function EditorPage() {
 
   const handleContentChange = useCallback(
     (newContent: string) => {
-      if (isRemoteUpdate.current) {
-        isRemoteUpdate.current = false;
-        return;
-      }
       setContent(newContent);
       setSaveStatus("saving");
       emitChange(newContent);

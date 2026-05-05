@@ -27,10 +27,10 @@ const corsOrigin = (origin, callback) => {
 // ─── Socket.io Setup ────────────────────────────────────────────────────────
 const io = new Server(server, {
   cors: {
-    origin: true,
+    origin: corsOrigin,
     methods: ["GET", "POST", "PUT", "OPTIONS"],
+    credentials: true,
   },
-  transports: ["websocket"],
   pingTimeout: 60000,
   pingInterval: 25000,
 });

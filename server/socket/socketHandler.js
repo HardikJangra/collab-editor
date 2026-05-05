@@ -2,6 +2,7 @@ const Document = require("../models/Document");
 
 // In-memory store: docId -> Map<socketId, userInfo>
 const documentRooms = new Map();
+const liveDocuments = new Map();
 
 const getUsersInRoom = (docId) => {
   const room = documentRooms.get(docId);
@@ -46,14 +47,15 @@ const socketHandler = (io) => {
         }
         documentRooms.get(docId).set(socket.id, currentUser);
 
-        // Fetch doc from DB
+        // Fetch doc from DB, then overlay any unsaved live room state.
         const doc = await Document.getOrCreate(docId);
+        const liveDoc = liveDocuments.get(docId);
 
         // Send current document state to the joining user
         socket.emit("document-loaded", {
           docId: doc.docId,
-          title: doc.title,
-          content: doc.content,
+          title: liveDoc?.title ?? doc.title,
+          content: liveDoc?.content ?? doc.content,
           version: doc.version,
           lastSavedAt: doc.lastSavedAt,
         });
@@ -76,6 +78,13 @@ const socketHandler = (io) => {
 
     // ── EDITOR CHANGE ────────────────────────────────────────────────────────
     socket.on("editor-change", ({ docId, content, cursorPosition }) => {
+      const liveDoc = liveDocuments.get(docId) || {};
+      liveDocuments.set(docId, {
+        ...liveDoc,
+        content,
+        updatedAt: new Date().toISOString(),
+      });
+
       // Broadcast to all OTHER clients in the room (not sender)
       socket.to(docId).emit("editor-update", {
         content,
@@ -86,6 +95,13 @@ const socketHandler = (io) => {
 
     // ── TITLE CHANGE ─────────────────────────────────────────────────────────
     socket.on("title-change", ({ docId, title }) => {
+      const liveDoc = liveDocuments.get(docId) || {};
+      liveDocuments.set(docId, {
+        ...liveDoc,
+        title,
+        updatedAt: new Date().toISOString(),
+      });
+
       socket.to(docId).emit("title-update", { title });
     });
 
@@ -110,6 +126,11 @@ const socketHandler = (io) => {
           },
           { upsert: true }
         );
+        liveDocuments.set(docId, {
+          content,
+          ...(title && { title }),
+          updatedAt: new Date().toISOString(),
+        });
         io.to(docId).emit("document-saved", { timestamp: new Date().toISOString() });
       } catch (err) {
         console.error("save-document error:", err);
