@@ -31,7 +31,7 @@ const corsOrigin = (origin, callback) => {
 // ─── Socket.io Setup ────────────────────────────────────────────────────────
 const io = new Server(server, {
   cors: {
-    origin: corsOrigin,
+    origin: ["https://collab-editor-black.vercel.app", "http://localhost:5173"],
     methods: ["GET", "POST", "PUT", "OPTIONS"],
     credentials: true,
   },
