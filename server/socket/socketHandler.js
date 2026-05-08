@@ -121,6 +121,9 @@ const socketHandler = (io) => {
         }
         documentRooms.get(docId).set(socket.id, currentUser);
 
+        // Presence should work immediately, even if document loading is slow.
+        io.to(docId).emit("users-update", getUsersInRoom(docId));
+
         // Fetch doc from DB, then overlay any unsaved live room state.
         const doc = await Document.getOrCreate(docId);
         const liveDoc = liveDocuments.get(docId);
@@ -138,9 +141,6 @@ const socketHandler = (io) => {
           { docId },
           { $set: { activeUsers: getUsersInRoom(docId).length } }
         ).catch((err) => console.error("activeUsers update error:", err));
-
-        // Broadcast updated user list to everyone in room
-        io.to(docId).emit("users-update", getUsersInRoom(docId));
 
         // Notify others
         socket.to(docId).emit("user-joined", {

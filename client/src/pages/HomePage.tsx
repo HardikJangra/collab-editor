@@ -20,18 +20,14 @@ export default function HomePage() {
   const handleNewDoc = async () => {
     setIsCreating(true);
     setInputError("");
+    const fallbackDocId = uuidv4().replace(/-/g, "").slice(0, 12);
+
     try {
-      const fallbackDocId = uuidv4().replace(/-/g, "").slice(0, 12);
       const doc = await createDocument();
       const docId = doc.docId || fallbackDocId;
       navigate(`/doc/${docId}`);
-    } catch (error) {
-      setInputError(
-        error instanceof Error
-          ? error.message
-          : "Could not create a document. Please try again."
-      );
-      setIsCreating(false);
+    } catch {
+      navigate(`/doc/${fallbackDocId}`);
     }
   };
 

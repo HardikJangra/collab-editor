@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Editor from "@/components/Editor";
 import Preview from "@/components/Preview";
@@ -28,6 +28,19 @@ export default function EditorPage() {
 
   const username = useRef(getStoredUsername()).current;
   const autosaveTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const localUser = useMemo(
+    () => ({
+      socketId: "local-user",
+      username,
+      color: "#7c3aed",
+      joinedAt: new Date().toISOString(),
+    }),
+    [username]
+  );
+  const visibleUsers = useMemo(() => {
+    const hasCurrentUser = users.some((user) => user.username === username);
+    return hasCurrentUser ? users : [localUser, ...users];
+  }, [localUser, users, username]);
 
   if (!docId) {
     navigate("/");
@@ -229,7 +242,7 @@ export default function EditorPage() {
         )}
 
         <aside className={styles.sidebar}>
-          <UserList users={users} currentUsername={username} />
+          <UserList users={visibleUsers} currentUsername={username} />
 
           
         </aside>

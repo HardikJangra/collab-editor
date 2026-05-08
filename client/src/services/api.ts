@@ -7,10 +7,19 @@ interface ApiResponse<T> {
 }
 
 const handleResponse = async <T>(res: Response): Promise<T> => {
-  const data = await res.json();
+  const contentType = res.headers.get("content-type") || "";
+  const data = contentType.includes("application/json")
+    ? await res.json()
+    : null;
+
   if (!res.ok) {
-    throw new Error(data.error || "An error occurred");
+    throw new Error(data?.error || "An error occurred");
   }
+
+  if (!data) {
+    throw new Error("Invalid response from server");
+  }
+
   return data as T;
 };
 

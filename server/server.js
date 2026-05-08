@@ -11,13 +11,17 @@ const { apiLimiter } = require("./middleware/rateLimiter");
 const app = express();
 const server = http.createServer(app);
 
+const normalizeOrigin = (origin) => origin.replace(/\/$/, "");
+
 const allowedOrigins = (process.env.CLIENT_URL || "http://localhost:5173")
   .split(",")
-  .map((origin) => origin.trim())
+  .map((origin) => normalizeOrigin(origin.trim()))
   .filter(Boolean);
 
 const corsOrigin = (origin, callback) => {
-  if (!origin || allowedOrigins.includes(origin)) {
+  const normalizedOrigin = origin ? normalizeOrigin(origin) : origin;
+
+  if (!normalizedOrigin || allowedOrigins.includes(normalizedOrigin)) {
     return callback(null, true);
   }
 
