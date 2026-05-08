@@ -10,7 +10,7 @@ const createDocument = async (req, res, next) => {
 
     const doc = await Document.create({
       docId,
-      title: title || "Untitled Document",
+      title: typeof title === "string" && title.trim() ? title : "Untitled Document",
     });
 
     res.status(201).json({
@@ -65,12 +65,12 @@ const saveDocument = async (req, res, next) => {
       {
         $set: {
           content,
-          ...(title && { title }),
+          ...(typeof title === "string" ? { title: title || "Untitled Document" } : {}),
           lastSavedAt: new Date(),
         },
         $inc: { version: 1 },
       },
-      { new: true, upsert: true, runValidators: true }
+      { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true }
     );
 
     res.status(200).json({

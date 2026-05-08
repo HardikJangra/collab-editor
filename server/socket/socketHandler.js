@@ -3,6 +3,10 @@ const Document = require("../models/Document");
 // In-memory store: docId -> Map<socketId, userInfo>
 const documentRooms = new Map();
 const liveDocuments = new Map();
+const saveTimers = new Map();
+
+const DOC_ID_PATTERN = /^[a-zA-Z0-9-]{6,64}$/;
+const SERVER_AUTOSAVE_DELAY_MS = 1500;
 
 const getUsersInRoom = (docId) => {
   const room = documentRooms.get(docId);
@@ -10,7 +14,72 @@ const getUsersInRoom = (docId) => {
   return Array.from(room.values());
 };
 
+const isValidDocId = (docId) => typeof docId === "string" && DOC_ID_PATTERN.test(docId);
+
+const persistDocument = async (docId, liveDoc = liveDocuments.get(docId)) => {
+  if (!isValidDocId(docId) || !liveDoc) return null;
+
+  const set = {
+    lastSavedAt: new Date(),
+  };
+
+  if (Object.prototype.hasOwnProperty.call(liveDoc, "content")) {
+    set.content = liveDoc.content;
+  }
+
+  if (Object.prototype.hasOwnProperty.call(liveDoc, "title")) {
+    set.title = liveDoc.title || "Untitled Document";
+  }
+
+  return Document.findOneAndUpdate(
+    { docId },
+    {
+      $set: set,
+      $inc: { version: 1 },
+    },
+    {
+      new: true,
+      upsert: true,
+      runValidators: true,
+      setDefaultsOnInsert: true,
+    }
+  );
+};
+
+const schedulePersist = (docId) => {
+  const existingTimer = saveTimers.get(docId);
+  if (existingTimer) clearTimeout(existingTimer);
+
+  const timer = setTimeout(async () => {
+    try {
+      const doc = await persistDocument(docId);
+      if (doc) {
+        ioSafeEmit(docId, "document-saved", {
+          timestamp: doc.lastSavedAt.toISOString(),
+          version: doc.version,
+        });
+      }
+    } catch (err) {
+      console.error("autosave error:", err);
+      ioSafeEmit(docId, "document-save-error", {
+        message: "Failed to autosave document",
+      });
+    } finally {
+      saveTimers.delete(docId);
+    }
+  }, SERVER_AUTOSAVE_DELAY_MS);
+
+  saveTimers.set(docId, timer);
+};
+
+let activeIo = null;
+const ioSafeEmit = (docId, event, payload) => {
+  if (activeIo) activeIo.to(docId).emit(event, payload);
+};
+
 const socketHandler = (io) => {
+  activeIo = io;
+
   io.on("connection", (socket) => {
     console.log(`🔌 Socket connected: ${socket.id}`);
 
@@ -20,6 +89,11 @@ const socketHandler = (io) => {
     // ── JOIN DOCUMENT ────────────────────────────────────────────────────────
     socket.on("join-document", async ({ docId, username }) => {
       try {
+        if (!isValidDocId(docId)) {
+          socket.emit("error", { message: "Invalid document ID" });
+          return;
+        }
+
         // Leave previous room if any
         if (currentDocId) {
           socket.leave(currentDocId);
@@ -60,6 +134,11 @@ const socketHandler = (io) => {
           lastSavedAt: doc.lastSavedAt,
         });
 
+        Document.updateOne(
+          { docId },
+          { $set: { activeUsers: getUsersInRoom(docId).length } }
+        ).catch((err) => console.error("activeUsers update error:", err));
+
         // Broadcast updated user list to everyone in room
         io.to(docId).emit("users-update", getUsersInRoom(docId));
 
@@ -78,12 +157,15 @@ const socketHandler = (io) => {
 
     // ── EDITOR CHANGE ────────────────────────────────────────────────────────
     socket.on("editor-change", ({ docId, content, cursorPosition }) => {
+      if (!isValidDocId(docId) || typeof content !== "string") return;
+
       const liveDoc = liveDocuments.get(docId) || {};
       liveDocuments.set(docId, {
         ...liveDoc,
         content,
         updatedAt: new Date().toISOString(),
       });
+      schedulePersist(docId);
 
       // Broadcast to all OTHER clients in the room (not sender)
       socket.to(docId).emit("editor-update", {
@@ -95,18 +177,23 @@ const socketHandler = (io) => {
 
     // ── TITLE CHANGE ─────────────────────────────────────────────────────────
     socket.on("title-change", ({ docId, title }) => {
+      if (!isValidDocId(docId) || typeof title !== "string") return;
+
       const liveDoc = liveDocuments.get(docId) || {};
       liveDocuments.set(docId, {
         ...liveDoc,
         title,
         updatedAt: new Date().toISOString(),
       });
+      schedulePersist(docId);
 
       socket.to(docId).emit("title-update", { title });
     });
 
     // ── CURSOR POSITION ──────────────────────────────────────────────────────
     socket.on("cursor-move", ({ docId, position, username }) => {
+      if (!isValidDocId(docId)) return;
+
       socket.to(docId).emit("cursor-update", {
         socketId: socket.id,
         username,
@@ -118,20 +205,28 @@ const socketHandler = (io) => {
     // ── SAVE DOCUMENT ────────────────────────────────────────────────────────
     socket.on("save-document", async ({ docId, content, title }) => {
       try {
-        await Document.findOneAndUpdate(
-          { docId },
-          {
-            $set: { content, ...(title && { title }), lastSavedAt: new Date() },
-            $inc: { version: 1 },
-          },
-          { upsert: true }
-        );
+        if (!isValidDocId(docId) || typeof content !== "string") {
+          socket.emit("error", { message: "Invalid document data" });
+          return;
+        }
+
+        const existingTimer = saveTimers.get(docId);
+        if (existingTimer) {
+          clearTimeout(existingTimer);
+          saveTimers.delete(docId);
+        }
+
         liveDocuments.set(docId, {
           content,
-          ...(title && { title }),
+          ...(typeof title === "string" ? { title } : {}),
           updatedAt: new Date().toISOString(),
         });
-        io.to(docId).emit("document-saved", { timestamp: new Date().toISOString() });
+
+        const doc = await persistDocument(docId);
+        io.to(docId).emit("document-saved", {
+          timestamp: doc.lastSavedAt.toISOString(),
+          version: doc.version,
+        });
       } catch (err) {
         console.error("save-document error:", err);
         socket.emit("error", { message: "Failed to save document" });
@@ -146,8 +241,24 @@ const socketHandler = (io) => {
           room.delete(socket.id);
           if (room.size === 0) {
             documentRooms.delete(currentDocId);
+            persistDocument(currentDocId)
+              .catch((err) => console.error("disconnect save error:", err))
+              .finally(() => {
+                liveDocuments.delete(currentDocId);
+                const existingTimer = saveTimers.get(currentDocId);
+                if (existingTimer) clearTimeout(existingTimer);
+                saveTimers.delete(currentDocId);
+                Document.updateOne(
+                  { docId: currentDocId },
+                  { $set: { activeUsers: 0 } }
+                ).catch((err) => console.error("activeUsers update error:", err));
+              });
           } else {
             io.to(currentDocId).emit("users-update", getUsersInRoom(currentDocId));
+            Document.updateOne(
+              { docId: currentDocId },
+              { $set: { activeUsers: getUsersInRoom(currentDocId).length } }
+            ).catch((err) => console.error("activeUsers update error:", err));
           }
         }
 

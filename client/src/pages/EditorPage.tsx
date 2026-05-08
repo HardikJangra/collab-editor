@@ -87,7 +87,6 @@ export default function EditorPage() {
   );
 
   const performSave = useCallback(() => {
-    if (!content) return;
     emitSave(content, title);
     setSaveStatus("saving");
   }, [content, title, emitSave]);
@@ -184,6 +183,15 @@ export default function EditorPage() {
         </div>
 
         <div className={styles.headerRight}>
+          <span
+            className={`${styles.connectionBadge} ${
+              isConnected ? styles.connected : styles.disconnected
+            }`}
+          >
+            <span className={styles.connectionDot} />
+            {isConnected ? "Live" : isConnecting ? "Connecting" : "Offline"}
+          </span>
+
           <button onClick={handleShare} className={styles.shareBtn}>
             Share
           </button>

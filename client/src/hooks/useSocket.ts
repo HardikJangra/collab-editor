@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback } from "react";
 import { Socket } from "socket.io-client";
 import getSocket, { disconnectSocket } from "@/services/socket";
-import type { User, CursorUpdate } from "@/types/editorTypes";
+import type { User } from "@/types/editorTypes";
 
 interface UseSocketOptions {
   docId: string;
@@ -21,6 +21,11 @@ interface UseSocketOptions {
   onError: (msg: string) => void;
 }
 
+type DocumentLoadedPayload = Parameters<UseSocketOptions["onDocumentLoaded"]>[0];
+type EditorUpdatePayload = Parameters<UseSocketOptions["onEditorUpdate"]>[0];
+type TitleUpdatePayload = Parameters<UseSocketOptions["onTitleUpdate"]>[0];
+type DocumentSavedPayload = Parameters<UseSocketOptions["onDocumentSaved"]>[0];
+
 export const useSocket = ({
   docId,
   username,
@@ -34,42 +39,85 @@ export const useSocket = ({
   onError,
 }: UseSocketOptions) => {
   const socketRef = useRef<Socket | null>(null);
+  const handlersRef = useRef({
+    onDocumentLoaded,
+    onEditorUpdate,
+    onTitleUpdate,
+    onUsersUpdate,
+    onDocumentSaved,
+    onConnected,
+    onDisconnected,
+    onError,
+  });
+
+  useEffect(() => {
+    handlersRef.current = {
+      onDocumentLoaded,
+      onEditorUpdate,
+      onTitleUpdate,
+      onUsersUpdate,
+      onDocumentSaved,
+      onConnected,
+      onDisconnected,
+      onError,
+    };
+  });
 
   useEffect(() => {
     const socket = getSocket();
     socketRef.current = socket;
 
-    socket.on("connect", () => {
-      onConnected();
+    const handleConnect = () => {
+      handlersRef.current.onConnected();
       socket.emit("join-document", { docId, username });
-    });
+    };
+    const handleDisconnect = () => handlersRef.current.onDisconnected();
+    const handleConnectError = () =>
+      handlersRef.current.onError("Connection failed. Retrying...");
+    const handleDocumentLoaded = (data: DocumentLoadedPayload) =>
+      handlersRef.current.onDocumentLoaded(data);
+    const handleEditorUpdate = (data: EditorUpdatePayload) =>
+      handlersRef.current.onEditorUpdate(data);
+    const handleTitleUpdate = (data: TitleUpdatePayload) =>
+      handlersRef.current.onTitleUpdate(data);
+    const handleUsersUpdate = (users: User[]) =>
+      handlersRef.current.onUsersUpdate(users);
+    const handleDocumentSaved = (data: DocumentSavedPayload) =>
+      handlersRef.current.onDocumentSaved(data);
+    const handleSocketError = (data: { message: string }) =>
+      handlersRef.current.onError(data.message);
+    const handleDocumentSaveError = (data: { message: string }) =>
+      handlersRef.current.onError(data.message);
 
-    socket.on("disconnect", onDisconnected);
-    socket.on("connect_error", () => onError("Connection failed. Retrying..."));
-    socket.on("document-loaded", onDocumentLoaded);
-    socket.on("editor-update", onEditorUpdate);
-    socket.on("title-update", onTitleUpdate);
-    socket.on("users-update", onUsersUpdate);
-    socket.on("document-saved", onDocumentSaved);
-    socket.on("error", (data: { message: string }) => onError(data.message));
+    socket.on("connect", handleConnect);
+    socket.on("disconnect", handleDisconnect);
+    socket.on("connect_error", handleConnectError);
+    socket.on("document-loaded", handleDocumentLoaded);
+    socket.on("editor-update", handleEditorUpdate);
+    socket.on("title-update", handleTitleUpdate);
+    socket.on("users-update", handleUsersUpdate);
+    socket.on("document-saved", handleDocumentSaved);
+    socket.on("document-save-error", handleDocumentSaveError);
+    socket.on("error", handleSocketError);
 
     if (!socket.connected) {
       socket.connect();
     } else {
-      onConnected();
+      handlersRef.current.onConnected();
       socket.emit("join-document", { docId, username });
     }
 
     return () => {
-      socket.off("connect");
-      socket.off("disconnect");
-      socket.off("connect_error");
-      socket.off("document-loaded");
-      socket.off("editor-update");
-      socket.off("title-update");
-      socket.off("users-update");
-      socket.off("document-saved");
-      socket.off("error");
+      socket.off("connect", handleConnect);
+      socket.off("disconnect", handleDisconnect);
+      socket.off("connect_error", handleConnectError);
+      socket.off("document-loaded", handleDocumentLoaded);
+      socket.off("editor-update", handleEditorUpdate);
+      socket.off("title-update", handleTitleUpdate);
+      socket.off("users-update", handleUsersUpdate);
+      socket.off("document-saved", handleDocumentSaved);
+      socket.off("document-save-error", handleDocumentSaveError);
+      socket.off("error", handleSocketError);
       disconnectSocket();
     };
   }, [docId, username]);
