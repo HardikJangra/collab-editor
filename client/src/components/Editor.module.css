@@ -2,7 +2,7 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: var(--bg-primary);
+  background: #ffffff;
 }
 
 .editorHeader {
@@ -10,8 +10,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 0.4rem 1rem;
-  background: var(--bg-secondary);
-  border-bottom: 1px solid var(--border-subtle);
+  background: #fbfbfa;
+  border-bottom: 1px solid #e7e5e0;
   flex-shrink: 0;
 }
 
@@ -19,14 +19,14 @@
   font-size: 0.68rem;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: var(--text-muted);
+  color: #77736b;
   font-weight: 500;
 }
 
 .docId {
   font-family: var(--font-mono);
   font-size: 0.7rem;
-  color: var(--text-muted);
+  color: #77736b;
   opacity: 0.6;
 }
 
@@ -41,8 +41,8 @@
   flex-direction: column;
   padding: 1.2rem 0.6rem;
   min-width: 42px;
-  background: var(--bg-secondary);
-  border-right: 1px solid var(--border-subtle);
+  background: #fbfbfa;
+  border-right: 1px solid #e7e5e0;
   user-select: none;
   flex-shrink: 0;
 }
@@ -53,7 +53,7 @@
   font-family: var(--font-mono);
   font-size: 0.72rem;
   line-height: 1.75rem;
-  color: var(--text-muted);
+  color: #8a867e;
   opacity: 0.4;
 }
 
@@ -61,7 +61,7 @@
   flex: 1;
   padding: 1.2rem 1.4rem;
   background: transparent;
-  color: var(--text-primary);
+  color: #151515;
   font-family: var(--font-mono);
   font-size: 0.875rem;
   line-height: 1.75rem;
@@ -71,11 +71,11 @@
   min-height: 100%;
   white-space: pre-wrap;
   word-wrap: break-word;
-  caret-color: var(--accent-bright);
+  caret-color: #1f1f1d;
   tab-size: 2;
 }
 
 .textarea::placeholder {
-  color: var(--text-muted);
+  color: #8a867e;
   opacity: 0.4;
 }

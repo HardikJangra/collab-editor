@@ -4,8 +4,8 @@
   gap: 2px;
   padding: 0 0.75rem;
   height: var(--toolbar-height);
-  background: var(--bg-secondary);
-  border-bottom: 1px solid var(--border);
+  background: #fbfbfa;
+  border-bottom: 1px solid #e7e5e0;
   overflow-x: auto;
   flex-shrink: 0;
   scrollbar-width: none;
@@ -18,27 +18,27 @@
   border-radius: var(--radius-sm);
   font-family: var(--font-mono);
   font-size: 0.72rem;
-  color: var(--text-muted);
+  color: #6d6961;
   white-space: nowrap;
   transition: all var(--transition);
   min-width: fit-content;
 }
 
 .btn:hover {
-  background: var(--bg-elevated);
-  color: var(--text-primary);
+  background: #f4f3f0;
+  color: #151515;
 }
 
 .btn:active {
-  background: var(--accent-subtle);
-  color: var(--accent-bright);
+  background: #242421;
+  color: #ffffff;
   transform: scale(0.95);
 }
 
 .divider {
   width: 1px;
   height: 18px;
-  background: var(--border);
+  background: #d9d6cf;
   margin: 0 4px;
   flex-shrink: 0;
 }

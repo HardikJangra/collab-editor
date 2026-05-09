@@ -32,7 +32,7 @@ export default function EditorPage() {
     () => ({
       socketId: "local-user",
       username,
-      color: "#7c3aed",
+      color: "#242421",
       joinedAt: new Date().toISOString(),
     }),
     [username]
@@ -171,7 +171,10 @@ export default function EditorPage() {
       <header className={styles.header}>
         <div className={styles.headerLeft}>
           <button onClick={() => navigate("/")} className={styles.logoBtn}>
-            <span className={styles.logoIcon}>◈</span>
+            <span className={styles.logoMark} aria-hidden="true">
+              <span className={styles.logoLine} />
+              <span className={styles.logoLine} />
+            </span>
           </button>
 
           <div className={styles.titleWrapper}>
