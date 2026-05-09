@@ -31,7 +31,7 @@ export default function HomePage() {
     }
   };
 
-const handleOpenDoc = () => {
+  const handleOpenDoc = () => {
     const trimmed = docInput.trim();
     if (!trimmed) {
       setInputError("Please enter a document ID or URL");
@@ -51,48 +51,46 @@ const handleOpenDoc = () => {
 
   const features = [
     {
-      icon: "⚡",
+      icon: "RT",
       title: "Real-Time Sync",
       desc: "Every keystroke synced instantly via WebSockets",
     },
     {
-      icon: "👥",
+      icon: "US",
       title: "Live Collaboration",
       desc: "See who's editing with live presence indicators",
     },
     {
-      icon: "✍️",
+      icon: "MD",
       title: "Markdown Preview",
       desc: "Split-pane live preview with syntax highlighting",
     },
     {
-      icon: "💾",
+      icon: "SV",
       title: "Auto Save",
       desc: "Continuous autosave keeps your work safe",
     },
     {
-      icon: "🔗",
+      icon: "SH",
       title: "Instant Sharing",
       desc: "Share any doc with a unique link instantly",
     },
     {
-      icon: "🛡️",
+      icon: "PR",
       title: "Production Ready",
       desc: "Rate limiting, error handling, reconnection logic",
     },
   ];
 
   return (
-    <div className="min-h-screen bg-white text-gray-900">
-      {/* Background Grid */}
-      
-
-      {/* Header */}
+    <div className={`${styles.page} ${mounted ? styles.mounted : ""}`}>
       <header className={styles.header}>
         <div className={styles.logo}>
-          <span className={styles.logoIcon}>◈</span>
-          <span className={styles.logoText}>Collab</span>
-          <span className={styles.logoAccent}>Editor</span>
+          <span className={styles.logoMark} aria-hidden="true">
+            <span className={styles.logoLine} />
+            <span className={styles.logoLine} />
+          </span>
+          <span className={styles.logoText}>Collab Editor</span>
         </div>
         <nav className={styles.nav}>
           <a
@@ -231,9 +229,9 @@ const handleOpenDoc = () => {
           </div>
           {/* Floating user avatars */}
           <div className={styles.floatingUsers}>
-            <div className={styles.userAvatar} style={{ background: "#7c3aed" }}>H</div>
-            <div className={styles.userAvatar} style={{ background: "#059669" }}>A</div>
-            <div className={styles.userAvatar} style={{ background: "#dc2626" }}>S</div>
+            <div className={styles.userAvatar} style={{ background: "#242421" }}>H</div>
+            <div className={styles.userAvatar} style={{ background: "#6d6961" }}>A</div>
+            <div className={styles.userAvatar} style={{ background: "#2f7d5a" }}>S</div>
             <span className={styles.usersLabel}>3 editing now</span>
           </div>
         </div>
