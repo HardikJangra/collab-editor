@@ -1,14 +1,12 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { v4 as uuidv4 } from "uuid";
-import { createDocument } from "@/services/api";
 import styles from "./HomePage.module.css";
 
 const EXAMPLE_DOC_ID = "demo-getting-started";
 
 export default function HomePage() {
   const navigate = useNavigate();
-  const [isCreating, setIsCreating] = useState(false);
   const [docInput, setDocInput] = useState("");
   const [inputError, setInputError] = useState("");
   const [mounted, setMounted] = useState(false);
@@ -17,18 +15,11 @@ export default function HomePage() {
     setMounted(true);
   }, []);
 
-  const handleNewDoc = async () => {
-    setIsCreating(true);
-    setInputError("");
-    const fallbackDocId = uuidv4().replace(/-/g, "").slice(0, 12);
+  const createLocalDocId = () => uuidv4().replace(/-/g, "").slice(0, 12);
 
-    try {
-      const doc = await createDocument();
-      const docId = doc.docId || fallbackDocId;
-      navigate(`/doc/${docId}`);
-    } catch {
-      navigate(`/doc/${fallbackDocId}`);
-    }
+  const handleNewDoc = () => {
+    setInputError("");
+    navigate(`/doc/${createLocalDocId()}`);
   };
 
   const handleOpenDoc = () => {
@@ -103,7 +94,6 @@ export default function HomePage() {
           </a>
           <button
             onClick={handleNewDoc}
-            disabled={isCreating}
             className={styles.navCta}
           >
             Open Editor
@@ -134,20 +124,10 @@ export default function HomePage() {
           <div className={styles.ctaGroup}>
             <button
               onClick={handleNewDoc}
-              disabled={isCreating}
               className={styles.primaryBtn}
             >
-              {isCreating ? (
-                <>
-                  <span className={styles.spinner} />
-                  Creating...
-                </>
-              ) : (
-                <>
-                  <span>New Document</span>
-                  <span className={styles.btnArrow}>→</span>
-                </>
-              )}
+              <span>New Document</span>
+              <span className={styles.btnArrow}>→</span>
             </button>
 
             <button

@@ -75,16 +75,19 @@ export const useSocket = ({
     const socket = getSocket();
     socketRef.current = socket;
 
+    const joinDocument = () => {
+      socket.emit("join-document", {
+        docId,
+        username,
+      });
+    };
+
     // ─── Handlers ─────────────────────────────────────────────
     const handleConnect = () => {
       console.log("✅ Socket connected:", socket.id);
 
       handlersRef.current.onConnected();
-
-      socket.emit("join-document", {
-        docId,
-        username,
-      });
+      joinDocument();
     };
 
     const handleDisconnect = () => {
@@ -155,7 +158,12 @@ export const useSocket = ({
     socket.on("error", handleSocketError);
 
     // ─── Connect Socket ──────────────────────────────────────
-    socket.connect();
+    if (socket.connected) {
+      handlersRef.current.onConnected();
+      joinDocument();
+    } else {
+      socket.connect();
+    }
 
     // ─── Cleanup ─────────────────────────────────────────────
     return () => {
