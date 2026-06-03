@@ -2,6 +2,7 @@ import styles from "./Toolbar.module.css";
 
 interface ToolbarProps {
   onInsert: (prefix: string, suffix?: string) => void;
+  onOpenHistory?: () => void;
 }
 
 const tools = [
@@ -26,7 +27,7 @@ const tools = [
   { label: "![Img]", title: "Image", prefix: "![alt](", suffix: ")" },
 ] as const;
 
-export default function Toolbar({ onInsert }: ToolbarProps) {
+export default function Toolbar({ onInsert, onOpenHistory }: ToolbarProps) {
   return (
     <div className={styles.toolbar} role="toolbar" aria-label="Markdown formatting">
       {tools.map((tool, i) => {
@@ -45,6 +46,17 @@ export default function Toolbar({ onInsert }: ToolbarProps) {
           </button>
         );
       })}
+      {onOpenHistory ? (
+        <button
+          type="button"
+          onClick={onOpenHistory}
+          className={styles.btn}
+          title="Version history"
+          aria-label="Version history"
+        >
+          History
+        </button>
+      ) : null}
     </div>
   );
 }

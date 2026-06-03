@@ -1,12 +1,19 @@
 const Document = require("../models/Document");
+const {
+  createVersionEntry,
+  restoreVersionEntry,
+} = require("../services/versionService");
+const { setIo, emitToRoom } = require("./socketEvents");
 
 // In-memory store: docId -> Map<socketId, userInfo>
 const documentRooms = new Map();
 const liveDocuments = new Map();
 const saveTimers = new Map();
+const versionTimers = new Map();
 
 const DOC_ID_PATTERN = /^[a-zA-Z0-9-]{6,64}$/;
 const SERVER_AUTOSAVE_DELAY_MS = 1500;
+const ACTIVE_VERSION_SAVE_MS = 5 * 60 * 1000;
 
 const getUsersInRoom = (docId) => {
   const room = documentRooms.get(docId);
@@ -35,7 +42,6 @@ const persistDocument = async (docId, liveDoc = liveDocuments.get(docId)) => {
     { docId },
     {
       $set: set,
-      $inc: { version: 1 },
     },
     {
       new: true,
@@ -54,14 +60,14 @@ const schedulePersist = (docId) => {
     try {
       const doc = await persistDocument(docId);
       if (doc) {
-        ioSafeEmit(docId, "document-saved", {
+        emitToRoom(docId, "document-saved", {
           timestamp: doc.lastSavedAt.toISOString(),
           version: doc.version,
         });
       }
     } catch (err) {
       console.error("autosave error:", err);
-      ioSafeEmit(docId, "document-save-error", {
+      emitToRoom(docId, "document-save-error", {
         message: "Failed to autosave document",
       });
     } finally {
@@ -72,13 +78,58 @@ const schedulePersist = (docId) => {
   saveTimers.set(docId, timer);
 };
 
-let activeIo = null;
-const ioSafeEmit = (docId, event, payload) => {
-  if (activeIo) activeIo.to(docId).emit(event, payload);
+const scheduleVersionSnapshot = (docId, createdBy) => {
+  if (versionTimers.has(docId)) return;
+
+  const timer = setTimeout(async () => {
+    try {
+      const liveDoc = liveDocuments.get(docId);
+      if (!liveDoc || typeof liveDoc.content !== "string") {
+        return;
+      }
+
+      const result = await createVersionEntry({
+        documentId: docId,
+        content: liveDoc.content,
+        createdBy: createdBy || "Anonymous",
+        action: "autosave",
+      });
+
+      if (result) {
+        emitToRoom(docId, "version-history-updated", {
+          versionNumber: result.version.versionNumber,
+          createdBy: result.version.createdBy,
+          action: result.version.action,
+          createdAt: result.version.createdAt,
+        });
+        emitToRoom(docId, "document-saved", {
+          timestamp: result.document.lastSavedAt.toISOString(),
+          version: result.document.version,
+        });
+      }
+    } catch (err) {
+      console.error("version snapshot error:", err);
+      emitToRoom(docId, "document-save-error", {
+        message: "Failed to create version snapshot",
+      });
+    } finally {
+      versionTimers.delete(docId);
+    }
+  }, ACTIVE_VERSION_SAVE_MS);
+
+  versionTimers.set(docId, timer);
+};
+
+const clearVersionTimer = (docId) => {
+  const timer = versionTimers.get(docId);
+  if (timer) {
+    clearTimeout(timer);
+    versionTimers.delete(docId);
+  }
 };
 
 const socketHandler = (io) => {
-  activeIo = io;
+  setIo(io);
 
   io.on("connection", (socket) => {
     console.log(`🔌 Socket connected: ${socket.id}`);
@@ -166,6 +217,7 @@ const socketHandler = (io) => {
         updatedAt: new Date().toISOString(),
       });
       schedulePersist(docId);
+      scheduleVersionSnapshot(docId, currentUser?.username || "Anonymous");
 
       // Broadcast to all OTHER clients in the room (not sender)
       socket.to(docId).emit("editor-update", {
@@ -210,11 +262,16 @@ const socketHandler = (io) => {
           return;
         }
 
-        const existingTimer = saveTimers.get(docId);
-        if (existingTimer) {
-          clearTimeout(existingTimer);
-          saveTimers.delete(docId);
-        }
+        clearVersionTimer(docId);
+
+        const result = await createVersionEntry({
+          documentId: docId,
+          content,
+          title,
+          createdBy: currentUser?.username || "Anonymous",
+          action: "manual",
+          note: "Explicit save from collaboration session",
+        });
 
         liveDocuments.set(docId, {
           content,
@@ -222,14 +279,65 @@ const socketHandler = (io) => {
           updatedAt: new Date().toISOString(),
         });
 
-        const doc = await persistDocument(docId);
-        io.to(docId).emit("document-saved", {
+        const doc = result?.document || (await Document.getOrCreate(docId));
+        emitToRoom(docId, "document-saved", {
           timestamp: doc.lastSavedAt.toISOString(),
           version: doc.version,
         });
+
+        if (result) {
+          emitToRoom(docId, "version-history-updated", {
+            versionNumber: result.version.versionNumber,
+            createdBy: result.version.createdBy,
+            action: result.version.action,
+            createdAt: result.version.createdAt,
+          });
+        }
       } catch (err) {
         console.error("save-document error:", err);
         socket.emit("error", { message: "Failed to save document" });
+      }
+    });
+
+    // ── RESTORE VERSION ───────────────────────────────────────────────────────
+    socket.on("restore-version", async ({ versionId }) => {
+      try {
+        if (!versionId || !currentDocId) {
+          socket.emit("error", { message: "Invalid version or document" });
+          return;
+        }
+
+        const result = await restoreVersionEntry({
+          versionId,
+          createdBy: currentUser?.username || "Anonymous",
+        });
+
+        if (!result || !result.document) {
+          socket.emit("error", { message: "Restore failed" });
+          return;
+        }
+
+        liveDocuments.set(currentDocId, {
+          content: result.document.content,
+          title: result.document.title,
+          updatedAt: new Date().toISOString(),
+        });
+
+        emitToRoom(currentDocId, "document-restored", {
+          content: result.document.content,
+          version: result.document.version,
+          restoredBy: currentUser?.username,
+          restoredAt: result.restoredVersion.createdAt,
+        });
+        emitToRoom(currentDocId, "version-history-updated", {
+          versionNumber: result.restoredVersion.versionNumber,
+          createdBy: result.restoredVersion.createdBy,
+          action: result.restoredVersion.action,
+          createdAt: result.restoredVersion.createdAt,
+        });
+      } catch (err) {
+        console.error("restore-version error:", err);
+        socket.emit("error", { message: "Failed to restore version" });
       }
     });
 
@@ -248,6 +356,7 @@ const socketHandler = (io) => {
                 const existingTimer = saveTimers.get(currentDocId);
                 if (existingTimer) clearTimeout(existingTimer);
                 saveTimers.delete(currentDocId);
+                clearVersionTimer(currentDocId);
                 Document.updateOne(
                   { docId: currentDocId },
                   { $set: { activeUsers: 0 } }

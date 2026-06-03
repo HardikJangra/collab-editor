@@ -4,6 +4,7 @@ import Editor from "@/components/Editor";
 import Preview from "@/components/Preview";
 import Toolbar from "@/components/Toolbar";
 import UserList from "@/components/UserList";
+import VersionHistory from "@/components/VersionHistory";
 import StatusBar from "@/components/StatusBar";
 import { useSocket } from "@/hooks/useSocket";
 import { getStoredUsername } from "@/utils/username";
@@ -22,6 +23,8 @@ export default function EditorPage() {
   const [isConnecting, setIsConnecting] = useState(true);
   const [showPreview, setShowPreview] = useState(true);
   const [showUsers, setShowUsers] = useState(true);
+  const [showHistory, setShowHistory] = useState(false);
+  const [versionHistoryStale, setVersionHistoryStale] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [notification, setNotification] = useState<string | null>(null);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -70,6 +73,14 @@ export default function EditorPage() {
       setSaveStatus("saved");
       setLastSaved(new Date(timestamp));
       setTimeout(() => setSaveStatus("idle"), 2000);
+    },
+    onDocumentRestored: ({ content: restoredContent, restoredBy }) => {
+      setContent(restoredContent);
+      setSaveStatus("saved");
+      showNotification(`Restored by ${restoredBy}`);
+    },
+    onVersionHistoryUpdated: () => {
+      setVersionHistoryStale(true);
     },
     onConnected: () => {
       setIsConnected(true);
@@ -222,7 +233,10 @@ export default function EditorPage() {
         </div>
       </header>
 
-      <Toolbar onInsert={handleToolbarInsert} />
+      <Toolbar
+        onInsert={handleToolbarInsert}
+        onOpenHistory={() => setShowHistory((prev) => !prev)}
+      />
 
       <div className={styles.body}>
         <div
@@ -245,7 +259,25 @@ export default function EditorPage() {
         )}
 
         <aside className={styles.sidebar}>
-          <UserList users={visibleUsers} currentUsername={username} />
+          {showHistory ? (
+            <VersionHistory
+              docId={docId}
+              currentContent={content}
+              currentUsername={username}
+              isStale={versionHistoryStale}
+              onRefresh={() => setVersionHistoryStale(false)}
+              onClose={() => {
+                setShowHistory(false);
+                setVersionHistoryStale(false);
+              }}
+              onRestore={(restoredContent: string) => {
+                setContent(restoredContent);
+                showNotification("Version restored successfully");
+              }}
+            />
+          ) : (
+            <UserList users={visibleUsers} currentUsername={username} />
+          )}
 
           
         </aside>

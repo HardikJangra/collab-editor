@@ -16,6 +16,18 @@ interface UseSocketOptions {
   onTitleUpdate: (data: { title: string }) => void;
   onUsersUpdate: (users: User[]) => void;
   onDocumentSaved: (data: { timestamp: string }) => void;
+  onDocumentRestored: (data: {
+    content: string;
+    version: number;
+    restoredBy: string;
+    restoredAt: string;
+  }) => void;
+  onVersionHistoryUpdated: (data: {
+    versionNumber: number;
+    createdBy: string;
+    action: string;
+    createdAt: string;
+  }) => void;
   onConnected: () => void;
   onDisconnected: () => void;
   onError: (msg: string) => void;
@@ -41,6 +53,8 @@ export const useSocket = ({
   onTitleUpdate,
   onUsersUpdate,
   onDocumentSaved,
+  onDocumentRestored,
+  onVersionHistoryUpdated,
   onConnected,
   onDisconnected,
   onError,
@@ -53,6 +67,8 @@ export const useSocket = ({
     onTitleUpdate,
     onUsersUpdate,
     onDocumentSaved,
+    onDocumentRestored,
+    onVersionHistoryUpdated,
     onConnected,
     onDisconnected,
     onError,
@@ -65,6 +81,8 @@ export const useSocket = ({
       onTitleUpdate,
       onUsersUpdate,
       onDocumentSaved,
+      onDocumentRestored,
+      onVersionHistoryUpdated,
       onConnected,
       onDisconnected,
       onError,
@@ -131,6 +149,24 @@ export const useSocket = ({
       handlersRef.current.onDocumentSaved(data);
     };
 
+    const handleDocumentRestored = (data: {
+      content: string;
+      version: number;
+      restoredBy: string;
+      restoredAt: string;
+    }) => {
+      handlersRef.current.onDocumentRestored(data);
+    };
+
+    const handleVersionHistoryUpdated = (data: {
+      versionNumber: number;
+      createdBy: string;
+      action: string;
+      createdAt: string;
+    }) => {
+      handlersRef.current.onVersionHistoryUpdated(data);
+    };
+
     const handleSocketError = (data: {
       message: string;
     }) => {
@@ -153,6 +189,8 @@ export const useSocket = ({
     socket.on("title-update", handleTitleUpdate);
     socket.on("users-update", handleUsersUpdate);
     socket.on("document-saved", handleDocumentSaved);
+    socket.on("document-restored", handleDocumentRestored);
+    socket.on("version-history-updated", handleVersionHistoryUpdated);
 
     socket.on("document-save-error", handleDocumentSaveError);
     socket.on("error", handleSocketError);
@@ -176,6 +214,8 @@ export const useSocket = ({
       socket.off("title-update", handleTitleUpdate);
       socket.off("users-update", handleUsersUpdate);
       socket.off("document-saved", handleDocumentSaved);
+      socket.off("document-restored", handleDocumentRestored);
+      socket.off("version-history-updated", handleVersionHistoryUpdated);
 
       socket.off(
         "document-save-error",

@@ -1,5 +1,6 @@
 const Document = require("../models/Document");
 const { v4: uuidv4 } = require("uuid");
+const { createVersionEntry } = require("../services/versionService");
 
 
 // POST /api/documents — Create new document
@@ -54,30 +55,34 @@ const getDocument = async (req, res, next) => {
 const saveDocument = async (req, res, next) => {
   try {
     const { docId } = req.params;
-    const { content, title } = req.body;
+    const { content, title, createdBy } = req.body;
 
     if (content === undefined) {
       return res.status(400).json({ error: "Content is required" });
     }
 
-    const doc = await Document.findOneAndUpdate(
-      { docId },
-      {
-        $set: {
-          content,
-          ...(typeof title === "string" ? { title: title || "Untitled Document" } : {}),
-          lastSavedAt: new Date(),
-        },
-        $inc: { version: 1 },
-      },
-      { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true }
-    );
+    const result = await createVersionEntry({
+      documentId: docId,
+      content,
+      title,
+      createdBy: typeof createdBy === "string" ? createdBy : "Anonymous",
+      action: "manual",
+      note: "Explicit save created version",
+    });
+
+    const document = result?.document ?? (await Document.getOrCreate(docId));
 
     res.status(200).json({
       success: true,
-      docId: doc.docId,
-      version: doc.version,
-      lastSavedAt: doc.lastSavedAt,
+      docId: document.docId,
+      version: document.version,
+      lastSavedAt: document.lastSavedAt,
+      savedVersion: result?.version
+        ? {
+            versionId: result.version._id,
+            versionNumber: result.version.versionNumber,
+          }
+        : null,
     });
   } catch (error) {
     if (error.name === "ValidationError") {

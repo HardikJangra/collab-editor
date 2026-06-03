@@ -22,7 +22,13 @@ const documentSchema = new mongoose.Schema(
     },
     version: {
       type: Number,
-      default: 1,
+      default: 0,
+    },
+    lastVersionHash: {
+      type: String,
+      default: "",
+      trim: true,
+      maxlength: 128,
     },
     activeUsers: {
       type: Number,
