@@ -1,127 +1,174 @@
-# Collaborative Markdown Editor
+# Collaborative Editor
 
-A real-time collaborative markdown editor built with React, TypeScript, Node.js, Socket.io, and MongoDB.
+A real-time collaborative document editor inspired by modern tools like Google Docs, enabling multiple users to edit documents simultaneously with live synchronization, presence tracking, and version history.
 
-## Features
+## 🚀 Features
 
-- **Real-Time Sync** — WebSocket-powered live collaboration via Socket.io
-- **Live Markdown Preview** — Instant rendered preview with GFM + syntax highlighting  
-- **User Presence** — See who's currently editing with color-coded avatars
-- **Autosave** — Documents auto-save every 5 seconds to MongoDB
-- **Markdown Toolbar** — One-click insertion for all common markdown syntax
-- **Shareable Links** — Unique document URLs (`/doc/:docId`)
-- **Rate Limiting** — Express rate limiting on all API routes
-- **Responsive** — Works on mobile and desktop
+### Real-Time Collaboration
 
-## Tech Stack
+* Multi-user document editing
+* Instant synchronization across connected clients
+* WebSocket-powered communication
+* Low-latency updates
 
-| Layer | Technology |
-|-------|-----------|
-| Frontend | React 18, TypeScript, Vite |
-| Real-Time | Socket.io (client + server) |
-| Backend | Node.js, Express.js |
-| Database | MongoDB + Mongoose |
-| Markdown | react-markdown, remark-gfm, rehype-highlight |
-| Routing | React Router v6 |
-| Styling | CSS Modules + CSS Variables |
+### Presence System
 
-## Getting Started
+* Live collaborator tracking
+* Active user indicators
+* Real-time user presence updates
+* Collaborative editing awareness
 
-### Prerequisites
-- Node.js 18+
-- MongoDB (local or Atlas)
+### Document Version History
 
-### Installation
+* Automatic document snapshots
+* Manual version creation
+* Version timeline with timestamps
+* Version creator tracking
+* Preview historical versions
+* Restore previous document states
+* Audit trail for document changes
+
+### Version Restoration
+
+* One-click rollback to previous versions
+* Real-time restoration updates across all connected users
+* Collaboration continues seamlessly after restore
+* Restore actions recorded as new versions
+
+### Persistence Layer
+
+* MongoDB database storage
+* Automatic document saving
+* Version data persistence
+* Scalable document management
+
+## 🛠️ Tech Stack
+
+### Frontend
+
+* React.js
+* JavaScript
+* CSS
+* Socket.IO Client
+
+### Backend
+
+* Node.js
+* Express.js
+* Socket.IO
+* MongoDB
+* Mongoose
+
+### Real-Time Communication
+
+* WebSockets via Socket.IO
+
+## 🏗️ System Architecture
+
+User A
+↓
+WebSocket
+↓
+Node.js + Socket.IO Server
+↓
+MongoDB
+↓
+Version History Service
+↓
+WebSocket Broadcast
+↓
+User B / User C
+
+## 📂 Core Features Implemented
+
+### Real-Time Document Synchronization
+
+Every document update is broadcast to connected collaborators using WebSockets, ensuring all users see changes instantly.
+
+### Presence Tracking
+
+The system tracks active collaborators and updates user presence in real time.
+
+### Version History System
+
+The editor maintains document snapshots and allows users to:
+
+* View historical versions
+* Preview previous content
+* Restore any version
+* Track version ownership and timestamps
+
+### Restore Workflow
+
+1. User selects a historical version
+2. Version content is loaded
+3. Document state is updated
+4. Update is broadcast to all collaborators
+5. New version record is created for auditability
+
+## ⚡ Performance Optimizations
+
+* Debounced updates
+* Efficient WebSocket event handling
+* Snapshot-based versioning
+* Duplicate version prevention
+* Optimized MongoDB queries
+
+## 🔒 Future Improvements
+
+* PDF Export
+* Markdown Export
+* Rich Text Formatting
+* Role-Based Permissions
+* Comment System
+* Document Sharing Links
+* Rate Limiting
+* End-to-End Encryption
+
+## 📸 Screenshots
+
+Add project screenshots here.
+
+## 🚀 Getting Started
+
+### Backend
 
 ```bash
-# Clone & install all dependencies
-git clone https://github.com/yourusername/collab-markdown-editor
-cd collab-markdown-editor
-npm run install:all
-
-# Configure environment
-cp server/.env.example server/.env
-# Edit server/.env with your MongoDB URI
-
-# Start both servers
+cd server
+npm install
 npm run dev
 ```
 
-The app will be available at:
-- Frontend: http://localhost:5173
-- Backend API: http://localhost:3001
+### Frontend
 
-## Project Structure
-
-```
-collab-editor/
-├── client/               # React + TypeScript frontend
-│   └── src/
-│       ├── components/   # Editor, Preview, Toolbar, UserList, StatusBar
-│       ├── pages/        # HomePage, EditorPage
-│       ├── hooks/        # useSocket, useDebounce
-│       ├── services/     # socket.ts, api.ts
-│       ├── types/        # TypeScript interfaces
-│       └── utils/        # username generator
-│
-└── server/               # Node.js + Express backend
-    ├── controllers/      # documentController.js
-    ├── models/           # Document.js (Mongoose)
-    ├── routes/           # documentRoutes.js
-    ├── socket/           # socketHandler.js
-    ├── middleware/        # rateLimiter.js
-    └── config/           # db.js
-```
-
-## API Endpoints
-
-| Method | Route | Description |
-|--------|-------|-------------|
-| POST | `/api/documents` | Create new document |
-| GET | `/api/documents/:docId` | Get document by ID |
-| PUT | `/api/documents/:docId` | Save/update document |
-| DELETE | `/api/documents/:docId` | Delete document |
-
-## WebSocket Events
-
-| Event | Direction | Description |
-|-------|-----------|-------------|
-| `join-document` | Client → Server | Join a document room |
-| `editor-change` | Client → Server | Broadcast content change |
-| `title-change` | Client → Server | Broadcast title change |
-| `save-document` | Client → Server | Trigger DB save |
-| `document-loaded` | Server → Client | Initial document state |
-| `editor-update` | Server → Client | Receive content change |
-| `users-update` | Server → Client | Updated user presence list |
-| `document-saved` | Server → Client | Save confirmation |
-
-## Deployment
-
-**Frontend (Vercel)**
 ```bash
-cd client && npm run build
-# Deploy dist/ to Vercel
+cd client
+npm install
+npm run dev
 ```
 
-Set these Vercel environment variables:
-```bash
-VITE_API_URL=https://your-render-service.onrender.com/api
-# Optional. If omitted, the client derives this from VITE_API_URL.
-VITE_SOCKET_URL=https://your-render-service.onrender.com
+### Environment Variables
+
+Create a `.env` file inside the server directory:
+
+```env
+MONGODB_URI=your_mongodb_connection_string
+PORT=5000
 ```
 
-**Backend (Railway/Render)**
-```bash
-# Set environment variables:
-# MONGODB_URI, CLIENT_URL, NODE_ENV=production, PORT
-#
-# CLIENT_URL should be your Vercel frontend origin, for example:
-# CLIENT_URL=https://your-app.vercel.app
-#
-# You can allow multiple frontend origins with commas:
-# CLIENT_URL=https://your-app.vercel.app,https://your-preview.vercel.app
-```
+## 🎯 Learning Outcomes
 
-## Resume Description
+This project demonstrates:
 
-> Built a **Real-Time Collaborative Markdown Editor** using React, TypeScript, Node.js, and WebSockets enabling multiple users to simultaneously edit and preview Markdown documents with live synchronization, autosave to MongoDB, shareable document links, user presence indicators, and a rich formatting toolbar.
+* Real-time systems design
+* WebSocket communication
+* Multi-user synchronization
+* Database schema design
+* Version control concepts
+* Event-driven architecture
+* Backend API development
+* Full-stack application development
+
+## 📄 License
+
+MIT License
